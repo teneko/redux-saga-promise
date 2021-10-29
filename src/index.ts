@@ -72,7 +72,7 @@ function rejectPromise<TA extends PayloadActionAndMeta<any, any, any, Resolvable
 /**
  * Saga to resolve or reject promise depending on the executor function returns or throws.
  *
- * @param executor A function that returns a value or throws a error that get applied on promise.
+ * @param executor A function that returns a value or throws a error that get applied to promise.
  */
 export function* implementPromiseAction<TA extends PayloadActionAndMeta<any, any, any, any>>(action: TA, executor: TriggerExecutor<ResolveValueFromTriggerAction<TA>>) {
   verify(action, "implementPromiseAction");
@@ -148,7 +148,7 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
     & SymbolTagged<true>
     & PromiseActionsFromTriggerAction<typeof updatedTrigger, typeof resolvedAction, typeof rejectedAction>
     & { sagas: typeof sagas }
-    & { /** Only used for type resolution. It does not any contain values. */ types: typeof types });
+    & { /** Only used for type resolution. It does not contain any values. */ types: typeof types });
 }
 
 function createPromiseAction<V = any, P = void, T extends string = string>(type: T) {
@@ -169,6 +169,9 @@ function createPreparedPromiseAction<V, PA extends PrepareAction<any> = PrepareA
   );
 }
 
+/**
+ * @template V Resolve type contraint for promise.
+ */
 export function promiseActionFactory<V = any>() {
   return {
     /**
