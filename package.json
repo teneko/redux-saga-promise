@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "pretest": "npm run build",
     "test": "npx jest",
-    "prepublish": "npm run build"
+    "prepublish": "npm run test"
   },
   "keywords": [
     "redux",
