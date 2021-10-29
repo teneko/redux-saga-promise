@@ -128,6 +128,7 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
   const types: {
     action: PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>,
     promise: Promise<ResolveValueFromTriggerAction<PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>>>,
+    resolveValue: V
   } = {} as any;
 
   const sagas = {

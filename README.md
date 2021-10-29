@@ -229,6 +229,7 @@ const promiseAction = promiseActionFactory<number>().simple("MY_ACTION");
 
 declare const typeOfActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.action;
 declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
+declare const typeOfResolvedValueFromPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.resolveValue;
 
 const promise = store.dispatch(promiseAction()).meta.promise; // OR
            // = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
