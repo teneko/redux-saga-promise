@@ -100,9 +100,9 @@ export function* rejectPromiseAction<TA extends PayloadActionAndMeta<any, any, a
   yield call(rejectPromise, action, error);
 }
 
-function createPromiseActions<T extends string>(type: T) {
+function createPromiseActions<V, T extends string>(type: T) {
   return {
-    resolvedAction: createAction(`${type}/resolved`),
+    resolvedAction: createAction<V>(`${type}/resolved`),
     rejectedAction: createAction(`${type}/rejected`),
   };
 }
@@ -126,15 +126,17 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
   })) as ActionCreatorWithPreparedPayloadAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>, typeof triggerAction>;
 
   const types: {
-    action: PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>,
+    triggerAction: PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>,
+    resolvedAction: PayloadAction<V, typeof resolvedAction.type>,
+    rejectedAction: PayloadAction<any, typeof rejectedAction.type>
     promise: Promise<ResolveValueFromTriggerAction<PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>>>,
     resolveValue: V
   } = {} as any;
 
   const sagas = {
-    implement: implementPromiseAction as <TA2 extends typeof types["action"], RT extends ResolveValueFromTriggerAction<TA2>>(action: TA2, executor: TriggerExecutor<RT>) => ReturnType<typeof implementPromiseAction>,
-    resolve: resolvePromiseAction as <TA2 extends typeof types["action"]>(action: TA2, value: ResolveValueFromTriggerAction<TA2>) => ReturnType<typeof resolvePromiseAction>,
-    reject: rejectPromiseAction as <TA2 extends typeof types["action"]>(action: TA2, error: any) => ReturnType<typeof rejectPromiseAction>,
+    implement: implementPromiseAction as <TA2 extends typeof types["triggerAction"], RT extends ResolveValueFromTriggerAction<TA2>>(action: TA2, executor: TriggerExecutor<RT>) => ReturnType<typeof implementPromiseAction>,
+    resolve: resolvePromiseAction as <TA2 extends typeof types["triggerAction"]>(action: TA2, value: ResolveValueFromTriggerAction<TA2>) => ReturnType<typeof resolvePromiseAction>,
+    reject: rejectPromiseAction as <TA2 extends typeof types["triggerAction"]>(action: TA2, error: any) => ReturnType<typeof rejectPromiseAction>,
   };
 
   return Object.assign(updatedTrigger, {

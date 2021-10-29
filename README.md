@@ -227,7 +227,7 @@ Additionally, all the helper functions will throw a custom `Error` subclass `Con
 ```js
 const promiseAction = promiseActionFactory<number>().simple("MY_ACTION");
 
-declare const typeOfActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.action;
+declare const typeOfTriggerActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.triggerAction;
 declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
 declare const typeOfResolvedValueFromPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.resolveValue;
 
