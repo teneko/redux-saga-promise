@@ -1,16 +1,24 @@
 {
-  "name": "redux-saga-promise",
+  "name": "@teroneko/redux-saga-promise",
   "version": "1.0.0",
-  "description": "",
+  "description": "Create actions that return promises, which are resolved or rejected by a redux saga",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
   "scripts": {
     "build": "npx tsc",
     "test": "npx jest"
   },
-  "keywords": [],
+  "keywords": [
+    "redux",
+    "saga",
+    "action",
+    "promise",
+    "promises",
+    "resolve",
+    "reject"
+  ],
   "author": "teroneko",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
@@ -29,5 +37,16 @@
     "lodash": "^4.17.21",
     "redux": "^4.1.2",
     "redux-saga": "^1.1.3"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/teroneko/redux-saga-promise.git"
+  },
+  "bugs": {
+    "url": "https://github.com/teroneko/redux-saga-promise/issues"
+  },
+  "homepage": "https://github.com/teroneko/redux-saga-promise#readme"
 }
