@@ -273,7 +273,7 @@ describe("rejectPromiseAction", function () {
     expect(store.getState().rejected === error).toBeTruthy();
   });
 
-  test("should throw ArgumentError", function () {
+  it("should throw ArgumentError", function () {
     const { caughtMiddlewareError, promiseAction, store } = setup(sagas.rejectSaga);
     const bogusPromiseAction = () => ({ type: promiseAction.toString() }); // mimics promise action but doesn't have proper meta
     store.dispatch(bogusPromiseAction());
@@ -281,7 +281,7 @@ describe("rejectPromiseAction", function () {
     expect(caughtMiddlewareError() instanceof ArgumentError).toBeTruthy();
   });
 
-  test("should throw ConfigurationError", function () {
+  it("should throw ConfigurationError", function () {
     const { caughtMiddlewareError, promiseAction, store } = setup(sagas.rejectSaga, { withMiddleware: false });
     store.dispatch(promiseAction());
     store.dispatch(sagas.controlAction({}));

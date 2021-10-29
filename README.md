@@ -16,7 +16,7 @@ The library provides:
 
 * Middleware that makes it work.
 
-* Many TypeScript helper types
+* TypeScript helper types and functions
 
 These are described in detail below.
 
@@ -219,6 +219,33 @@ sagaMiddleware.run(rootSaga)
 ```
 
 Additionally, all the helper functions will throw a custom `Error` subclass `ConfigurationError` if `promiseMiddleware` was not properly included in the store.
+
+## TypeScript helper types
+
+`promiseAction.types ` does not really exist- it only exists as TypeScript-type to make use of `typeof`:
+
+```js
+const promiseAction = promiseActionFactory<number>().simple("MY_ACTION");
+
+declare const typeOfActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.action;
+declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
+
+const promise = store.dispatch(promiseAction()).meta.promise; // OR
+           // = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
+```
+
+`redux-saga` cannot infer the parameters and return type of `promiseAction` correctly when using the call effect or equivalent, so you can use the pre-typed sagas:
+
+```js
+const { implement, resolve, reject } = promiseAction.sagas;
+
+// Instead of this...
+call(implementPromiseAction, promiseAction(), () => 2);
+// ... use this for better TypeScript support:
+call(promiseAction.sagas.implement, promiseAction(), () => 2);
+```
+
+## Contributing
 
 ### Building & Testing
 
