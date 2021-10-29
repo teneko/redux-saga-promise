@@ -74,7 +74,7 @@ function rejectPromise<TA extends PayloadActionAndMeta<any, any, any, Resolvable
  *
  * @param executor A function that returns a value or throws a error that get applied on promise.
  */
-export function* implementPromiseAction<TA extends PayloadActionAndMeta<any, any, any, any>>(action: TA, executor: () => ResolveValueFromTriggerAction<TA>) {
+export function* implementPromiseAction<TA extends PayloadActionAndMeta<any, any, any, any>>(action: TA, executor: TriggerExecutor<ResolveValueFromTriggerAction<TA>>) {
   verify(action, "implementPromiseAction");
 
   try {
@@ -107,6 +107,8 @@ function createPromiseActions<T extends string>(type: T) {
   };
 }
 
+type TriggerExecutor<RT> = (() => PromiseLike<RT> | RT | Iterator<any, RT, any>);
+
 function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCreator<any, any>>(
   type: T,
   triggerAction: TA,
@@ -129,7 +131,7 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
   } = {} as any;
 
   const sagas = {
-    implement: implementPromiseAction as <TA2 extends typeof types["action"]>(action: TA2, executor: () => ResolveValueFromTriggerAction<TA2>) => ReturnType<typeof implementPromiseAction>,
+    implement: implementPromiseAction as <TA2 extends typeof types["action"], RT extends ResolveValueFromTriggerAction<TA2>>(action: TA2, executor: TriggerExecutor<RT>) => ReturnType<typeof implementPromiseAction>,
     resolve: resolvePromiseAction as <TA2 extends typeof types["action"]>(action: TA2, value: ResolveValueFromTriggerAction<TA2>) => ReturnType<typeof resolvePromiseAction>,
     reject: rejectPromiseAction as <TA2 extends typeof types["action"]>(action: TA2, error: any) => ReturnType<typeof rejectPromiseAction>,
   };

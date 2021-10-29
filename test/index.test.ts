@@ -190,6 +190,13 @@ describe("implementPromiseAction", function () {
     store.dispatch(sagas.controlAction({}));
     expect(caughtMiddlewareError() instanceof ConfigurationError).toBeTruthy();
   });
+
+  it("should correctly infer value type", function () {
+    const promiseAction = promiseActionFactory<string>().simple("test");
+    call(promiseAction.sagas.implement, promiseAction(), async () => Promise.resolve(""));
+    call(promiseAction.sagas.implement, promiseAction(), function* () { yield "dummy"; return ""; });
+    call(promiseAction.sagas.implement, promiseAction(), () => "");
+  });
 });
 
 describe("resolvePromiseAction", function () {
@@ -231,6 +238,12 @@ describe("resolvePromiseAction", function () {
     store.dispatch(promiseAction());
     store.dispatch(sagas.controlAction({}));
     expect(caughtMiddlewareError() instanceof ConfigurationError).toBeTruthy();
+  });
+
+  it("should correctly infer value type", function () {
+    const promiseAction = promiseActionFactory<string>().simple("test");
+    call(promiseAction.sagas.resolve, promiseAction(), "");
+    call(promiseAction.sagas.resolve, promiseAction.trigger(), "");
   });
 });
 
