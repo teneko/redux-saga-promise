@@ -1,6 +1,6 @@
 {
   "name": "@teroneko/redux-saga-promise",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create actions that return promises, which are resolved or rejected by a redux saga",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
@@ -8,7 +8,7 @@
     "build": "npx tsc",
     "pretest": "npm run build",
     "test": "npx jest",
-    "prepublish": "npm run test"
+    "prepublishOnly": "npm run test"
   },
   "keywords": [
     "redux",
