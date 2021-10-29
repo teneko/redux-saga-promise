@@ -6,6 +6,7 @@
   "typings": "dist/src/index.d.ts",
   "scripts": {
     "build": "npx tsc",
+    "pretest": "npm run build",
     "test": "npx jest"
   },
   "keywords": [
