@@ -103,7 +103,7 @@ export function* rejectPromiseAction<TA extends PayloadActionAndMeta<any, any, a
 function createPromiseActions<V, T extends string>(type: T) {
   return {
     resolvedAction: createAction<V>(`${type}/resolved`),
-    rejectedAction: createAction(`${type}/rejected`),
+    rejectedAction: createAction<any>(`${type}/rejected`),
   };
 }
 
@@ -113,7 +113,7 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
   type: T,
   triggerAction: TA,
 ) {
-  const { resolvedAction, rejectedAction } = createPromiseActions(type);
+  const { resolvedAction, rejectedAction } = createPromiseActions<V, T>(type);
 
   const updatedTrigger = createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
     meta: {
