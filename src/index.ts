@@ -130,7 +130,7 @@ function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCr
     resolvedAction: PayloadAction<V, typeof resolvedAction.type>,
     rejectedAction: PayloadAction<any, typeof rejectedAction.type>
     promise: Promise<ResolveValueFromTriggerAction<PayloadActionAndMeta<V, P, T, PromiseActionsFromMeta<V, typeof resolvedAction, typeof rejectedAction>>>>,
-    resolveValue: V
+    resolvedValue: V
   } = {} as any;
 
   const sagas = {
