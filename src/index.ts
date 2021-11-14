@@ -49,8 +49,8 @@ function isTriggerAction(action: PayloadAction<any, any, PromiseActionsFromMeta<
 }
 
 function verify(action, method) {
-  if (!isTriggerAction(action)) throw new ArgumentError(`redux-saga-promise: ${method}: first argument must be promise trigger action, got ${action}`);
-  if (!isFunction(action?.meta?.promiseResolution?.resolve)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute--it seems that promiseMiddleware has not been not included before SagaMiddleware`);
+  if (!isTriggerAction(action)) throw new ArgumentError(`redux-saga-promise: ${method}: First argument must be a promise trigger action, but got ${action}`);
+  if (!isFunction(action?.meta?.promiseResolution?.resolve)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute - it seems that the passed action was not processed by the promiseMiddleware. (1. Did you included the promiseMiddlware before SagaMiddleware? 2. Have you dispatched the action to the store before using it?)`);
 }
 
 type ResolveValueFromTriggerAction<A extends PayloadActionAndMeta<any, any, any, any>> = A extends {
