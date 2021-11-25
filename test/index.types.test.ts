@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { merge } from "lodash";
 import { promiseActionFactory } from "../src";
 
 const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
@@ -9,9 +10,13 @@ declare const typeOfRejectedActionThatGotCreatedFromTheSimpleOrAdvancedActionCre
 declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
 declare const typeOfResolvedValueFromPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.resolveValue;
 
-interface Payload {
-  data: any
+interface ParameterOne {
+  oneData: any
 }
 
-const mustExpectPayload = promiseActionFactory<number>().create<Payload>("MY_ACTION")({ data: {} });
-const mustExpectInferredPayload = promiseActionFactory<number>().create("MY_ACTION", (payload: Payload) => ({ payload }))({ data: {} });
+interface ParameterTwo {
+  twoData: any
+}
+
+const simpleActionMustExpectPayload = promiseActionFactory<number>().create<ParameterOne>("MY_ACTION")({ oneData: {} });
+const advancedActionMustExpectInferredPayload = promiseActionFactory<number>().create("MY_ACTION", (one: ParameterOne, two: ParameterTwo) => ({ payload: merge(one, two) }))({ oneData: {} }, { twoData: {} });

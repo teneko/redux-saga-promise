@@ -5,6 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import { isFunction, merge } from "lodash";
 import { call, CallEffect, SagaReturnType } from "redux-saga/effects";
+import { _ActionCreatorWithPreparedPayload } from "@reduxjs/toolkit/dist/createAction";
 import { ArgumentError } from "./ArgumentError";
 import { ConfigurationError } from "./ConfigurationError";
 
@@ -58,15 +59,15 @@ type TypesFromAction<V, P, T extends string, M extends PromiseActionsFromMeta<V,
   }
 };
 
-type TriggerActionCreator<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<P, T>> = ActionCreatorWithPreparedPayloadAndMeta<V, P, T, M, TPAC>;
+type TriggerActionCreator<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TA extends PayloadActionCreator<any, T>> = ActionCreatorWithPreparedPayloadAndMeta<V, P, T, M, TA>;
 
-type SagaPromiseActionCreatorBase<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<P, T>> = TriggerActionCreator<V, P, T, M, TPAC> & {
-  trigger: SagaPromiseActionCreatorBase<V, P, T, M, TPAC>
+export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadActionCreator<any, T>> = TriggerActionCreator<V, P, T, PromiseActionsFromMeta<V, T>, TA> & {
+  trigger: SagaPromiseActionCreator<V, P, T, TA>
   resolved: ActionCreatorWithPayload<V, T>;
   rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
-} & SagasFromAction<V, P, T> & TypesFromAction<V, P, T, M>;
+} & SagasFromAction<V, P, T> & TypesFromAction<V, P, T, PromiseActionsFromMeta<V, T>>;
 
-export type SagaPromiseActionCreator<V, P, T extends string, TPAC extends PayloadActionCreator<P, T>> = SagaPromiseActionCreatorBase<V, P, T, SagaPromiseMeta<V, T>, TPAC>;
+export type SagaPromisePreparedActionCreator<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
 
 function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
   return action?.meta?.promiseActions.resolved != null;
@@ -138,13 +139,13 @@ function createPromiseActions<V, T extends string>(type: T) {
 
 type TriggerExecutor<RT> = (() => PromiseLike<RT> | RT | Iterator<any, RT, any>);
 
-function wrapTriggerAction<V, P, T extends string, TPAC extends PayloadActionCreator<P, T>>(
+function wrapTriggerAction<V, P, T extends string, TA extends PayloadActionCreator<any, T>>(
   type: T,
-  triggerAction: TPAC,
-): SagaPromiseActionCreator<V, P, T, TPAC> {
+  triggerAction: TA,
+): SagaPromiseActionCreator<V, P, T, TA> {
   const { resolvedAction, rejectedAction } = createPromiseActions<V, T>(type);
 
-  const updatedTrigger = <TriggerActionCreator<V, P, T, SagaPromiseMeta<V, T>, TPAC>>createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
+  const updatedTrigger = <TriggerActionCreator<V, P, T, SagaPromiseMeta<V, T>, TA>>createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
     meta: <SagaPromiseMeta<V, T>>{
       promiseActions: {
         resolved: resolvedAction,
@@ -209,7 +210,7 @@ interface PromiseActionFactory<V> {
    * @param prepare (optional) a method that takes any number of arguments and returns { payload } or { payload, meta }.
    *                If this is given, the resulting action creator will pass its arguments to this method to calculate payload & meta.
    */
-  create<PA extends PrepareAction<any> = PrepareAction<any>, P = ReturnType<PA>["payload"], T extends string = string>(type: T, prepareAction: PA): SagaPromiseActionCreator<V, P, T, ActionCreatorWithPayload<P, T>>
+  create<TA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: TA): SagaPromisePreparedActionCreator<V, T, TA>
 }
 
 /**
@@ -217,7 +218,7 @@ interface PromiseActionFactory<V> {
  */
 export function promiseActionFactory<V = any>() {
   return {
-    create: (type: any, prepareAction?: any) => {
+    create(type: any, prepareAction?: any) {
       if (arguments.length === 0) {
         throw new ArgumentError("Type was expected");
       }

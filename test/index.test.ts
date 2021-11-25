@@ -186,7 +186,7 @@ describe("implementPromiseAction", function () {
 
   it("should throw ConfigurationError", function () {
     const { caughtMiddlewareError, promiseAction, store } = setup(sagas.implementSaga, { withMiddleware: false });
-    store.dispatch(promiseAction());
+    store.dispatch(promiseAction("test"));
     store.dispatch(sagas.controlAction({}));
     expect(caughtMiddlewareError() instanceof ConfigurationError).toBeTruthy();
   });
@@ -235,7 +235,7 @@ describe("resolvePromiseAction", function () {
 
   it("should throw ConfigurationError", function () {
     const { caughtMiddlewareError, promiseAction, store } = setup(sagas.resolveSaga, { withMiddleware: false });
-    store.dispatch(promiseAction());
+    store.dispatch(promiseAction("test"));
     store.dispatch(sagas.controlAction({}));
     expect(caughtMiddlewareError() instanceof ConfigurationError).toBeTruthy();
   });
@@ -283,7 +283,7 @@ describe("rejectPromiseAction", function () {
 
   it("should throw ConfigurationError", function () {
     const { caughtMiddlewareError, promiseAction, store } = setup(sagas.rejectSaga, { withMiddleware: false });
-    store.dispatch(promiseAction());
+    store.dispatch(promiseAction("test"));
     store.dispatch(sagas.controlAction({}));
     expect(caughtMiddlewareError() instanceof ConfigurationError).toBeTruthy();
   });
