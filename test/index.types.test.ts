@@ -2,8 +2,9 @@
 import { merge } from "lodash";
 import { promiseActionFactory } from "../src";
 
-const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
+test.skip("workaround", () => 1);
 
+const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
 declare const typeOfTriggerActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.triggerAction;
 declare const typeOfResolvedActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.resolvedAction;
 declare const typeOfRejectedActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.rejectedAction;
