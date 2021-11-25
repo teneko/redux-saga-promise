@@ -58,15 +58,15 @@ type TypesFromAction<V, P, T extends string, M extends PromiseActionsFromMeta<V,
   }
 };
 
-type TriggerActionCreator<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<any, any>> = ActionCreatorWithPreparedPayloadAndMeta<V, P, T, M, TPAC>;
+type TriggerActionCreator<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<P, T>> = ActionCreatorWithPreparedPayloadAndMeta<V, P, T, M, TPAC>;
 
-type SagaPromiseActionCreatorBase<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<any, any>> = TriggerActionCreator<V, P, T, M, TPAC> & {
+type SagaPromiseActionCreatorBase<V, P, T extends string, M extends PromiseActionsFromMeta<V, T>, TPAC extends PayloadActionCreator<P, T>> = TriggerActionCreator<V, P, T, M, TPAC> & {
   trigger: SagaPromiseActionCreatorBase<V, P, T, M, TPAC>
   resolved: ActionCreatorWithPayload<V, T>;
   rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
 } & SagasFromAction<V, P, T> & TypesFromAction<V, P, T, M>;
 
-export type SagaPromiseActionCreator<V, P, T extends string, TPAC extends PayloadActionCreator<any, any>> = SagaPromiseActionCreatorBase<V, P, T, SagaPromiseMeta<V, T>, TPAC>;
+export type SagaPromiseActionCreator<V, P, T extends string, TPAC extends PayloadActionCreator<P, T>> = SagaPromiseActionCreatorBase<V, P, T, SagaPromiseMeta<V, T>, TPAC>;
 
 function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
   return action?.meta?.promiseActions.resolved != null;
@@ -138,7 +138,7 @@ function createPromiseActions<V, T extends string>(type: T) {
 
 type TriggerExecutor<RT> = (() => PromiseLike<RT> | RT | Iterator<any, RT, any>);
 
-function wrapTriggerAction<V, P, T extends string, TPAC extends PayloadActionCreator<any, any>>(
+function wrapTriggerAction<V, P, T extends string, TPAC extends PayloadActionCreator<P, T>>(
   type: T,
   triggerAction: TPAC,
 ): SagaPromiseActionCreator<V, P, T, TPAC> {
