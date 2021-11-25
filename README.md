@@ -8,7 +8,7 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
 
 The library provides:
 
-* Action creators, `promiseActionFactory<PromiseResolveValue>().simple(type)` and `promiseActionFactory<PromiseResolveValue>().advanced(type, prepareAction)` that you can use to define actions which return promises when the pomise middleware has been surpassed. We call an action that returns a promise a *promise action*.
+* Action creators, `promiseActionFactory<PromiseResolveValue>().create(type)` and `promiseActionFactory<PromiseResolveValue>().create(type, prepareAction)` that you can use to define actions which return promises when the pomise middleware has been surpassed. We call an action that returns a promise a *promise action*.
  
 * Saga helpers `implementPromiseAction()`, `resolvePromiseAction()`, and`rejectPromiseAction()` that you use to resolve or reject a promise action"s promise.
 
@@ -47,13 +47,13 @@ sagaMiddleware.run(rootSaga)
 
 ## Creating a promise action:
 
-Create a promise action using `promiseActionFactory<PromiseResolveValue()>().simple(type)` and `promiseActionFactory<PromiseResolveValue()>().advanced(type, prepareAction)` or , analogous to `createAction` from `@reduxjs/toolkit`:
+Create a promise action using `promiseActionFactory<PromiseResolveValue()>().create(type)` and `promiseActionFactory<PromiseResolveValue()>().create(type, prepareAction)` or , analogous to `createAction` from `@reduxjs/toolkit`:
 
 ```js
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
-export const promiseAction = promiseActionFactory<number>().simple("MY_ACTION") 
-                    //  promiseActionFactory<number>().advanced(type, prepareCreator)
+export const promiseAction = promiseActionFactory<number>().create("MY_ACTION") 
+                    //  promiseActionFactory<number>().create(type, prepareCreator)
 ```
 
 ## Resolving/rejecting the action in a saga:
@@ -160,7 +160,7 @@ Commonly you want the redux store to reflect the status of a promise action:
 whether it"s pending, what the resolved value is, or what the rejected error
 is.
 
-Behind the scenes, `promiseAction = promiseActionFactory().simple("MY_ACTION")` actually
+Behind the scenes, `promiseAction = promiseActionFactory().create("MY_ACTION")` actually
 creates a suite of three actions:
 
 * `promiseAction.trigger`: An alias for `promiseAction`, which is what you dispatch that then creates the promise.
@@ -225,7 +225,7 @@ Additionally, all the helper functions will throw a custom `Error` subclass `Con
 `promiseAction.types ` does not really exist- it only exists as TypeScript-type to make use of `typeof`:
 
 ```js
-const promiseAction = promiseActionFactory<number>().simple("MY_ACTION");
+const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
 
 declare const typeOfTriggerActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.triggerAction;
 declare const typeOfResolvedActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.resolvedAction;
