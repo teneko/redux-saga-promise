@@ -17,8 +17,8 @@ import {
 
 describe("promiseAction", function () {
   describe.each([
-    promiseActionFactory<string>().simple("simple"),
-    promiseActionFactory<string>().advanced("prepared", null),
+    promiseActionFactory<string>().create("simple"),
+    promiseActionFactory<string>().create("prepared", null),
   ])("creator", function (actionCreator) {
     it(`${actionCreator.type} should have keys`, function () {
       expect(typeof actionCreator?.trigger).toBe("function");
@@ -33,8 +33,8 @@ describe("promiseAction", function () {
   });
 
   describe.each([
-    promiseActionFactory<string>().simple("simple")(),
-    promiseActionFactory<string>().advanced("prepared", () => ({ payload: { test: "" } }))(),
+    promiseActionFactory<string>().create("simple")(),
+    promiseActionFactory<string>().create("prepared", () => ({ payload: { test: "" } }))(),
   ])("action", function (action) {
     it(`${action.type} should have keys`, function () {
       expect(action?.meta?.promiseActions?.resolved).toBeTruthy();
@@ -96,7 +96,7 @@ function setup(saga, { withMiddleware = true } = {}) {
   // Define the promise action we'll use in our tests.  To avoid possible
   // contamination, create a new one for each test
   //
-  const promiseAction = promiseActionFactory<string>().simple<string>("promiseAction");
+  const promiseAction = promiseActionFactory<string>().create<string>("promiseAction");
 
   //
   // Define a reducer that records the payloads of each phase
@@ -192,7 +192,7 @@ describe("implementPromiseAction", function () {
   });
 
   it("should correctly infer value type", function () {
-    const promiseAction = promiseActionFactory<string>().simple("test");
+    const promiseAction = promiseActionFactory<string>().create("test");
     call(promiseAction.sagas.implement, promiseAction(), async () => Promise.resolve(""));
     call(promiseAction.sagas.implement, promiseAction(), function* () { yield "dummy"; return ""; });
     call(promiseAction.sagas.implement, promiseAction(), () => "");
@@ -241,7 +241,7 @@ describe("resolvePromiseAction", function () {
   });
 
   it("should correctly infer value type", function () {
-    const promiseAction = promiseActionFactory<string>().simple("test");
+    const promiseAction = promiseActionFactory<string>().create("test");
     call(promiseAction.sagas.resolve, promiseAction(), "");
     call(promiseAction.sagas.resolve, promiseAction.trigger(), "");
   });

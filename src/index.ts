@@ -185,36 +185,54 @@ function createPreparedPromiseAction<V, PA extends PrepareAction<any> = PrepareA
   );
 }
 
+interface PromiseActionFactory<V> {
+  /**
+   * A utility function to create an action creator for the given action type
+   * string. The action creator accepts a single argument, which will be included
+   * in the action object as a field called payload. The action creator function
+   * will also have its toString() overriden so that it returns the action type,
+   * allowing it to be used in reducer logic that is looking for that action type.
+   * The created action contains promise actions to make redux-saga-promise work.
+   *
+   * @param type The action type to use for created actions.
+   */
+  create<P = void, T extends string = string>(type: T): SagaPromiseActionCreator<V, P, T, ActionCreatorWithPayload<P, T>>
+  /**
+   * A utility function to create an action creator for the given action type
+   * string. The action creator accepts a single argument, which will be included
+   * in the action object as a field called payload. The action creator function
+   * will also have its toString() overriden so that it returns the action type,
+   * allowing it to be used in reducer logic that is looking for that action type.
+   * The created action contains promise actions to make redux-saga-promise work.
+   *
+   * @param type The action type to use for created actions.
+   * @param prepare (optional) a method that takes any number of arguments and returns { payload } or { payload, meta }.
+   *                If this is given, the resulting action creator will pass its arguments to this method to calculate payload & meta.
+   */
+  create<PA extends PrepareAction<any> = PrepareAction<any>, P = ReturnType<PA>["payload"], T extends string = string>(type: T, prepareAction: PA): SagaPromiseActionCreator<V, P, T, ActionCreatorWithPayload<P, T>>
+}
+
 /**
  * @template V Resolve type contraint for promise.
  */
 export function promiseActionFactory<V = any>() {
   return {
-    /**
-     * A utility function to create an action creator for the given action type
-     * string. The action creator accepts a single argument, which will be included
-     * in the action object as a field called payload. The action creator function
-     * will also have its toString() overriden so that it returns the action type,
-     * allowing it to be used in reducer logic that is looking for that action type.
-     * The created action contains promise actions to make redux-saga-promise work.
-     *
-     * @param type The action type to use for created actions.
-     */
-    simple: <P = void, T extends string = string>(type: T) => createPromiseAction<V, P>(type),
-    /**
-     * A utility function to create an action creator for the given action type
-     * string. The action creator accepts a single argument, which will be included
-     * in the action object as a field called payload. The action creator function
-     * will also have its toString() overriden so that it returns the action type,
-     * allowing it to be used in reducer logic that is looking for that action type.
-     * The created action contains promise actions to make redux-saga-promise work.
-     *
-     * @param type The action type to use for created actions.
-     * @param prepare (optional) a method that takes any number of arguments and returns { payload } or { payload, meta }.
-     *                If this is given, the resulting action creator will pass its arguments to this method to calculate payload & meta.
-     */
-    advanced: <PA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: PA) => createPreparedPromiseAction<V, PA>(type, prepareAction),
-  };
+    create: (type: any, prepareAction?: any) => {
+      if (arguments.length === 0) {
+        throw new ArgumentError("Type was expected");
+      }
+
+      if (arguments.length > 2) {
+        throw new ArgumentError("Too many arguments");
+      }
+
+      if (arguments.length === 2) {
+        return createPreparedPromiseAction(type, prepareAction);
+      }
+
+      return createPromiseAction(type);
+    },
+  } as any as PromiseActionFactory<V>;
 }
 
 /**
