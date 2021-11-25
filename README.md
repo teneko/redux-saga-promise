@@ -254,7 +254,8 @@ call(promiseAction.sagas.implement, promiseAction(), () => 2);
 
 `package.json` defines the usual scripts:
 
-* `npm build`: transpiles the source, placing the result in `dist/src/index.js`
+* `npm install`: install node packages.
+* `npm build`: transpiles the source, placing the result in `dist/src/index.js`.
 * `npm test`: builds, and then runs the test suite.
 
 The tests are written using `ts-jest`;

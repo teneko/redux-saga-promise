@@ -7,11 +7,11 @@ import { call } from "redux-saga/effects";
 import { ArgumentError } from "./ArgumentError";
 import { ConfigurationError } from "./ConfigurationError";
 
-const promiseSymbol = Symbol.for("@teroneko/redux-saga-promise");
+export const promiseSymbol = Symbol.for("@teroneko/redux-saga-promise");
 
-type SymbolTagged<T> = { [promiseSymbol]: T };
+export type SymbolTagged<T> = { [promiseSymbol]: T };
 
-type PromiseInstanceFromMeta<V> = {
+export type PromiseInstanceFromMeta<V> = {
   promise?: Promise<V>;
 };
 
