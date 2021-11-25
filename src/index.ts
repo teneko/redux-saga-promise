@@ -11,11 +11,11 @@ export const promiseSymbol = Symbol.for("@teroneko/redux-saga-promise");
 
 export type SymbolTagged<T> = { [promiseSymbol]: T };
 
-type PromiseInstanceFromMeta<V> = {
+export type PromiseInstanceFromMeta<V> = {
   promise?: Promise<V>;
 };
 
-type PromiseActionsFromMeta<V, RSA extends PayloadActionCreator<any, any>, RJA extends PayloadActionCreator<any, any>> = {
+export type PromiseActionsFromMeta<V, RSA extends PayloadActionCreator<any, any>, RJA extends PayloadActionCreator<any, any>> = {
   promiseActions: {
     resolved: RSA;
     rejected: RJA;
@@ -31,18 +31,18 @@ type PromiseResolutionFromMeta<V> = {
 
 type ResolvablePromiseActionsFromMeta<V, RSA extends PayloadActionCreator<any, any>, RJA extends PayloadActionCreator<any, any>> = PromiseActionsFromMeta<V, RSA, RJA> & PromiseResolutionFromMeta<V>;
 
-type PromiseActionsFromTriggerAction<TA = any, RSA = any, RJA = any> = {
+export type PromiseActionsFromTriggerAction<TA = any, RSA = any, RJA = any> = {
   trigger: TA;
   resolved: RSA;
   rejected: RJA;
 };
 
-type ActionCreatorWithPreparedPayloadAndMeta<V, P, T extends string, M extends PromiseActionsFromMeta<V, any, any>, PA extends PrepareAction<any>> =
+export type ActionCreatorWithPreparedPayloadAndMeta<V, P, T extends string, M extends PromiseActionsFromMeta<V, any, any>, PA extends PrepareAction<any>> =
   ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, never, ReturnType<PA> extends {
     meta: infer InferM & M;
   } ? InferM : M>;
 
-type PayloadActionAndMeta<V, P, T extends string, M extends PromiseActionsFromMeta<V, any, any>> = PayloadAction<P, T, M, never>;
+export type PayloadActionAndMeta<V, P, T extends string, M extends PromiseActionsFromMeta<V, any, any>> = PayloadAction<P, T, M, never>;
 
 function isTriggerAction(action: PayloadAction<any, any, PromiseActionsFromMeta<any, any, any>>): action is PayloadAction<any, any, ResolvablePromiseActionsFromMeta<any, any, any>> {
   return action?.meta?.promiseActions.resolved != null;
@@ -53,7 +53,7 @@ function verify(action, method) {
   if (!isFunction(action?.meta?.promiseResolution?.resolve)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute - it seems that the passed action was not processed by the promiseMiddleware. (1. Did you included the promiseMiddlware before SagaMiddleware? 2. Have you dispatched the action to the store before using it?)`);
 }
 
-type ResolveValueFromTriggerAction<A extends PayloadActionAndMeta<any, any, any, any>> = A extends {
+export type ResolveValueFromTriggerAction<A extends PayloadActionAndMeta<any, any, any, any>> = A extends {
   meta: {
     [promiseSymbol]: {
       resolveValueType: infer V
@@ -107,7 +107,7 @@ function createPromiseActions<V, T extends string>(type: T) {
   };
 }
 
-type TriggerExecutor<RT> = (() => PromiseLike<RT> | RT | Iterator<any, RT, any>);
+export type TriggerExecutor<RT> = (() => PromiseLike<RT> | RT | Iterator<any, RT, any>);
 
 function createUpdatedTrigger<V, P, T extends string, TA extends PayloadActionCreator<any, any>>(
   type: T,
