@@ -11,7 +11,7 @@ export const promiseSymbol = Symbol.for("@teroneko/redux-saga-promise");
 
 export type SymbolTagged<T> = { [promiseSymbol]: T };
 
-export type PromiseInstanceFromMeta<V> = {
+type PromiseInstanceFromMeta<V> = {
   promise?: Promise<V>;
 };
 
