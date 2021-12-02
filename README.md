@@ -18,6 +18,7 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
 - [Promise middleware integration](#promise-middleware-integration)
 - [Promise action creation](#promise-action-creation)
   - [Promise action with type](#promise-action-with-type)
+  - [Promise action with type and payload](#promise-action-with-type-and-payload)
   - [Promise action with type and payload creator](#promise-action-with-type-and-payload-creator)
 - [Promise action fulfillment or rejection](#promise-action-fulfillment-or-rejection)
   - [implementPromiseAction](#implementpromiseaction)
@@ -85,17 +86,30 @@ const actionCreator = createAction(type_as_string)
 const action = createAction(type_as_string)()
 ```
 
-### Promise action with type and payload creator
+### Promise action with type and payload
 
 ```typescript
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
-// creates a promise action with only a type (string)
+// creates a promise action with type (string) and payload (any)
 const actionCreator = promiseActionFactory<resolve_value_type_for_promise>().create<payload_type>(type_as_string)
 const action = promiseActionFactory<resolve_value_type_for_promise>().create<payload_type>(type_as_string)({} as payload_type) // "as payload_type" just to show intention
 // equivalent to
 const actionCreator = createAction<payload_type>(type_as_string)
 const action = createAction<payload_type>(type_as_string)({} as payload_type) // "as payload_type" just to show intention
+```
+
+### Promise action with type and payload creator
+
+```typescript
+import { promiseActionFactory } from "@teroneko/redux-saga-promise"
+
+// creates a promise action with type (string) and payload creator (function)
+const actionCreator = promiseActionFactory<resolve_value_type_for_promise>().create(type_as_string, (payload: payload_type) => { payload })
+const action = promiseActionFactory<resolve_value_type_for_promise>().create(type_as_string, (payload: payload_type) => { payload })({} as payload_type) // "as payload_type" just to show intention
+// equivalent to
+const actionCreator = createAction(type_as_string, (payload: payload_type) => { payload })
+const action = createAction(type_as_string, (payload: payload_type) => { payload })({} as payload_type) // "as payload_type" just to show intention
 ```
 
 ## Promise action fulfillment or rejection
