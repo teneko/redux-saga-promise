@@ -28,7 +28,7 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
 - [Argument validation](#argument-validation)
 - [TypeScript helper types](#typescript-helper-types)
 - [Contributing](#contributing)
-  - [Building & Testing](#building--testing)
+  - [Building and testing](#building-and-testing)
 - [Licensing](#licensing)
 
 ## Overview
@@ -295,7 +295,7 @@ call(promiseAction.sagas.implement, promiseAction(), () => 2);
 
 ## Contributing
 
-### Building & Testing
+### Building and testing
 
 `package.json` defines the usual scripts:
 
