@@ -24,11 +24,13 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
   - [resolvePromiseAction](#resolvepromiseaction)
   - [rejectPromiseAction](#rejectpromiseaction)
 - [Promise action's reducable lifecycle actions](#promise-actions-reducable-lifecycle-actions)
-- [Promise action caveats](#promise-action-caveats)
+- [Promise action caveats in sagas](#promise-action-caveats-in-sagas)
 - [Argument validation](#argument-validation)
-- [TypeScript helper types](#typescript-helper-types)
+- [TypeScript helpers](#typescript-helpers)
+  - [Types](#types)
+  - [Sagas](#sagas)
 - [Contributing](#contributing)
-  - [Building and testing](#building-and-testing)
+  - [Build and test](#build-and-test)
 - [Licensing](#licensing)
 
 ## Overview
@@ -42,7 +44,7 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
   * `promiseAction.trigger` (same instance like `promiseAction`) created by you (via `promiseAction()`) and dispatched against the redux store,
   * `promiseAction.resolved` created **after** the deferred promise has been resolved and
   * `promiseAction.rejected` created **after** the deferred promise has been rejected
-  * to use in reducers or wherever you would need these actions.
+  * can be used in reducers or wherever you would need these actions.
 * TypeScript helper types
 
 ## Installation
@@ -68,7 +70,7 @@ sagaMiddleware.run(rootSaga)
 
 ##  Promise action creation
 
-Use the following create promise actions.
+Use the following to create promise actions.
 
 ### Promise action with type
 
@@ -230,7 +232,7 @@ export const reducer = handleActions({
   }, {})
 ```
 
-## Promise action caveats
+## Promise action caveats in sagas
 
 In the sagas that perform your business logic, you may at times want to dispatch a promise action and wait for it to resolve.  You can do that using redux-saga"s [`putResolve`](http://redux-saga.js.org/docs/api/#putresolveaction) Effect:
 
@@ -265,14 +267,16 @@ sagaMiddleware.run(rootSaga)
 
 Additionally, all the helper functions will throw a custom `Error` subclass `ConfigurationError` if `promiseMiddleware` was not properly included in the store.
 
-## TypeScript helper types
+## TypeScript helpers
+
+### Types
 
 `promiseAction.types ` does not really exist. It only exists as TypeScript-type to make use of `typeof`:
 
 ```typescript
 const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
 
-declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
+declare const type_of_promise_that_resides_in_promise_action: typeof promiseAction.types.promise;
 const promise = store.dispatch(promiseAction()).meta.promise; // or
 const promise = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
 
@@ -281,6 +285,8 @@ declare const type_of_resolved_action_that_got_created_from_the_simple_or_advanc
 declare const type_of_rejected_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.rejectedAction;
 declare const type_of_resolved_value_from_promise_of_promise_action: typeof promiseAction.types.resolveValue;
 ```
+
+### Sagas
 
 `redux-saga` cannot infer the parameters and return type of `promiseAction` correctly when using the call effect or equivalent, so you can use the pre-typed sagas:
 
@@ -295,9 +301,9 @@ call(promiseAction.sagas.implement, promiseAction(), () => 2);
 
 ## Contributing
 
-### Building and testing
+### Build and test
 
-`package.json` defines the usual scripts:
+`package.json` defines the following scripts:
 
 * `npm build`: transpiles the source, placing the result in `dist/src/index.js`
 * `npm test`: builds, and then runs the test suite.
