@@ -1,38 +1,59 @@
+<!-- omit in toc -->
 # @teroneko/redux-saga-promise
 
-Simple clean utility to define actions that return promises, for use with [redux-saga](https://redux-saga.js.org)
+_Use promises in redux sagas with TypeScript-first approach_
+
+<!-- omit in toc -->
+# Prologue
+
+This projects aims to create promise actions (where each action has its deferred promise after surpassing the middleware) that are able to be fullfilled or rejected in redux-saga-manner.
 
 Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux-saga-promise) but completelly revamped to use `createAction` from `@reduxjs/toolkit` to support **TypeScript**.
 
-# Overview
+<!-- omit in toc -->
+## Table of Contents
 
-The library provides:
+- [Overview](#overview)
+- [Installation](#installation)
+- [Promise middleware integration](#promise-middleware-integration)
+- [Promise action creation](#promise-action-creation)
+  - [Promise action with type](#promise-action-with-type)
+  - [Promise action with type and payload creator](#promise-action-with-type-and-payload-creator)
+- [Promise action fulfillment or rejection](#promise-action-fulfillment-or-rejection)
+  - [implementPromiseAction](#implementpromiseaction)
+  - [resolvePromiseAction](#resolvepromiseaction)
+  - [rejectPromiseAction](#rejectpromiseaction)
+- [Promise action's reducable lifecycle actions](#promise-actions-reducable-lifecycle-actions)
+- [Promise action caveats](#promise-action-caveats)
+- [Argument validation](#argument-validation)
+- [TypeScript helper types](#typescript-helper-types)
+- [Contributing](#contributing)
+  - [Building & Testing](#building--testing)
+- [Licensing](#licensing)
 
-* Action creators, `promiseActionFactory<PromiseResolveValue>().create(type)` and `promiseActionFactory<PromiseResolveValue>().create(type, prepareAction)` that you can use to define actions which return promises when the pomise middleware has been surpassed. We call an action that returns a promise a *promise action*.
- 
-* Saga helpers `implementPromiseAction()`, `resolvePromiseAction()`, and`rejectPromiseAction()` that you use to resolve or reject a promise action"s promise.
+## Overview
 
-* Lifecyle actions `promise.trigger`, `promise.resolved`, and `promise.rejected` that you can use in reducers (or wherever you want)
+* Redux middlware, namely `promiseMiddleware`, used to **transform** a promise-action-marked action (not promise action yet) to a fully qualified promise action that owns a deferred promise to allow a deferred fulfillment or rejection.
+* Saga helpers namely
+  * `implementPromiseAction()` to resolve and reject by passing either a generator function, an asnyc function or simply a function where the return value is used to fulfill the deferred promise inside the promise action,
+  * `resolvePromiseAction()` to resolve-only the deferred promise inside the promise action and
+  * `rejectPromiseAction()` to reject-only the deferred promise inside the promise action.
+* Lifecyle actions namely
+  * `promiseAction.trigger` (same instance like `promiseAction`) created by you (via `promiseAction()`) and dispatched against the redux store,
+  * `promiseAction.resolved` created **after** the deferred promise has been resolved and
+  * `promiseAction.rejected` created **after** the deferred promise has been rejected
+  * to use in reducers or wherever you would need these actions.
+* TypeScript helper types
 
-* Middleware that makes it work.
-
-* TypeScript helper types and functions
-
-These are described in detail below.
-
-# Installation
-
-As usual, install via:
+## Installation
 
 ```
 npm install @teroneko/redux-saga-promise
 ```
 
-# Usage
+## Promise middleware integration
 
-## Including the middleware:
-
-You must include include `promiseMiddleware` in the middleware chain, and it must come *before* `sagaMiddleware`:
+You must include include `promiseMiddleware` in the middleware chain, and it must come **before** `sagaMiddleware`:
 
 ```js
 import { applyMiddleware, createStore } from "redux"
@@ -45,23 +66,47 @@ const store          = createStore(rootReducer, {}, applyMiddleware(promiseMiddl
 sagaMiddleware.run(rootSaga)
 ```
 
-## Creating a promise action:
+##  Promise action creation
 
-Create a promise action using `promiseActionFactory<PromiseResolveValue()>().create(type)` and `promiseActionFactory<PromiseResolveValue()>().create(type, prepareAction)` or , analogous to `createAction` from `@reduxjs/toolkit`:
+Use the following create promise actions.
 
-```js
+### Promise action with type
+
+```typescript
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
-export const promiseAction = promiseActionFactory<number>().create("MY_ACTION") 
-                    //  promiseActionFactory<number>().create(type, prepareCreator)
+// creates a promise action with only a type (string)
+const actionCreator = promiseActionFactory<resolve_value_type_for_promise>().create(type_as_string)
+const action = promiseActionFactory<resolve_value_type_for_promise>().create(type_as_string)()
+// equivalent to
+const actionCreator = createAction(type_as_string)
+const action = createAction(type_as_string)()
 ```
 
-## Resolving/rejecting the action in a saga:
+### Promise action with type and payload creator
 
-It is up to you as the implementer to resolve or reject the promise"s action
-in a saga.  There are three helpers you can use as needed:
+```typescript
+import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
-### `implementPromiseAction(action, saga)`
+// creates a promise action with only a type (string)
+const actionCreator = promiseActionFactory<resolve_value_type_for_promise>().create<payload_type>(type_as_string)
+const action = promiseActionFactory<resolve_value_type_for_promise>().create<payload_type>(type_as_string)({} as payload_type) // "as payload_type" just to show intention
+// equivalent to
+const actionCreator = createAction<payload_type>(type_as_string)
+const action = createAction<payload_type>(type_as_string)({} as payload_type) // "as payload_type" just to show intention
+```
+
+## Promise action fulfillment or rejection
+
+Either you use
+
+* [`implementPromiseAction(action, function)`](#implementpromiseaction) to resolve and reject by passing either a generator function, an asnyc function or simply a function where the return value is used to fulfill the deferred promise,
+* [`resolvePromiseAction(action, value)`](#resolvepromiseaction) to resolve-only the deferred promise inside the promise action or
+* [`rejectPromiseAction(action, value)`](#rejectpromiseaction) to reject-only the deferred promise inside the promise action,
+
+because it is up to you as the implementer to resolve or reject the promise"s action in a saga.
+
+### implementPromiseAction
 
 The most convenient way!  You give this helper a saga function which it
 will execute.  If the saga function succesfully returns a value, the promise will
@@ -98,7 +143,7 @@ export function * rootSaga () {
 If you call `implementPromiseAction()` with a first argument that is not a
 promise action, it will throw an error (see [Argument Validation](#argument-validation) below).
 
-### `resolvePromiseAction(action, value)`
+### resolvePromiseAction
 
 Sometimes you may want finer control, or want to be more explicit when you know an
 operation won"t fail.  This helper causes the promise to resolve with the
@@ -127,7 +172,7 @@ function * rootSaga () {
 If you call `resolvePromiseAction()` with a first argument that is not a
 promise action, it will throw an error (see [Argument Validation](#argument-validation) below).
 
-### `rejectPromiseAction(action, value)`
+### rejectPromiseAction
 
 Sometimes you may want finer control, or want to explicitly fail without needing to `throw`. This helper causes the promise to reject with the
 passed value, which typically should be an `Error`.  For example:
@@ -154,7 +199,7 @@ If you call `rejectPromiseAction()` with a first argument that is not a
 promise action, it will throw an error (see [Argument Validation](#ArgumentValidation) below).
 
 
-## Action lifecycle -- reducing the promise action:
+##  Promise action's reducable lifecycle actions
 
 Commonly you want the redux store to reflect the status of a promise action:
 whether it"s pending, what the resolved value is, or what the rejected error
@@ -185,7 +230,7 @@ export const reducer = handleActions({
   }, {})
 ```
 
-## Dispatching a promise action in a saga
+## Promise action caveats
 
 In the sagas that perform your business logic, you may at times want to dispatch a promise action and wait for it to resolve.  You can do that using redux-saga"s [`putResolve`](http://redux-saga.js.org/docs/api/#putresolveaction) Effect:
 
@@ -195,7 +240,7 @@ This dispatches the action and waits for the promise to resolve, returning the r
 
 *Caution!* If you use [`put()`](http://redux-saga.js.org/docs/api/#putaction`) instead of `putResolve()`, the saga will continue execution immediately without waiting for the promise to resolve.
 
-## <a name="argument-validation"></a> Argument Validation
+## Argument validation
 
 To avoid accidental confusion, all the helper functions validate their
 arguments and will throw a custom `Error` subclass `ArgumentError` in case
@@ -222,24 +267,24 @@ Additionally, all the helper functions will throw a custom `Error` subclass `Con
 
 ## TypeScript helper types
 
-`promiseAction.types ` does not really exist- it only exists as TypeScript-type to make use of `typeof`:
+`promiseAction.types ` does not really exist. It only exists as TypeScript-type to make use of `typeof`:
 
-```js
+```typescript
 const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
 
-declare const typeOfTriggerActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.triggerAction;
-declare const typeOfResolvedActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.resolvedAction;
-declare const typeOfRejectedActionThatGotCreatedFromTheSimpleOrAdvancedActionCreator: typeof promiseAction.types.rejectedAction;
 declare const typeOfPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.promise;
-declare const typeOfResolvedValueFromPromiseThatGotCreatedOfPromiseMiddleware: typeof promiseAction.types.resolveValue;
+const promise = store.dispatch(promiseAction()).meta.promise; // or
+const promise = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
 
-const promise = store.dispatch(promiseAction()).meta.promise; // OR
-           // = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
+declare const type_of_trigger_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.triggerAction;
+declare const type_of_resolved_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.resolvedAction;
+declare const type_of_rejected_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.rejectedAction;
+declare const type_of_resolved_value_from_promise_of_promise_action: typeof promiseAction.types.resolveValue;
 ```
 
 `redux-saga` cannot infer the parameters and return type of `promiseAction` correctly when using the call effect or equivalent, so you can use the pre-typed sagas:
 
-```js
+```javascript
 const { implement, resolve, reject } = promiseAction.sagas;
 
 // Instead of this...
@@ -260,6 +305,6 @@ call(promiseAction.sagas.implement, promiseAction(), () => 2);
 The tests are written using `ts-jest`;
 
 
-# Licensing
+## Licensing
 
 This project is licensed under the MIT License. See [LICENSE](./LICENSE) for more information.
