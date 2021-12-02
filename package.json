@@ -19,7 +19,13 @@
     "promise",
     "promises",
     "resolve",
-    "reject"
+    "reject",
+    "typescript",
+    "ts",
+    "redux toolkit",
+    "toolkit",
+    "reduxjs",
+    "createAction"
   ],
   "author": "teroneko",
   "license": "MIT",
