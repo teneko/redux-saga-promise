@@ -1,3 +1,17 @@
+# [3.0.0](https://github.com/teroneko/redux-saga-promise/compare/2.0.2...3.0.0) (2021-12-03)
+
+
+### Features
+
+* promise action is now typed and usable as promise ([8f7c60e](https://github.com/teroneko/redux-saga-promise/commit/8f7c60e999f954d92c1c7d4ee5675fb4e5b820fd))
+
+
+### BREAKING CHANGES
+
+* Each promise action can now be awaited at root after it has been surpassed the promise middleware without accessing it through promiseAction.meta.promise first.
+
+
+
 ## [2.0.2](https://github.com/teroneko/redux-saga-promise/compare/2.0.1...2.0.2) (2021-12-02)
 
 
