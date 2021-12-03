@@ -20,6 +20,7 @@ Initially forked from [@adobe/redux-saga-promise](https://github.com/adobe/redux
   - [Promise action with type](#promise-action-with-type)
   - [Promise action with type and payload](#promise-action-with-type-and-payload)
   - [Promise action with type and payload creator](#promise-action-with-type-and-payload-creator)
+- [Promise action await](#promise-action-await)
 - [Promise action fulfillment or rejection](#promise-action-fulfillment-or-rejection)
   - [implementPromiseAction](#implementpromiseaction)
   - [resolvePromiseAction](#resolvepromiseaction)
@@ -71,9 +72,11 @@ sagaMiddleware.run(rootSaga)
 
 ##  Promise action creation
 
-Use the following to create promise actions.
+Use one of following method to create a promise action.
 
 ### Promise action with type
+
+Create a promise action (creator) with action-type.
 
 ```typescript
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
@@ -88,6 +91,8 @@ const action = createAction(type_as_string)()
 
 ### Promise action with type and payload
 
+Create a promise action (creator) with action-type and payload.
+
 ```typescript
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
@@ -101,6 +106,8 @@ const action = createAction<payload_type>(type_as_string)({} as payload_type) //
 
 ### Promise action with type and payload creator
 
+Create a promise action (creator) with a action-type and an individial payload (creator).
+
 ```typescript
 import { promiseActionFactory } from "@teroneko/redux-saga-promise"
 
@@ -111,6 +118,21 @@ const action = promiseActionFactory<resolve_value_type_for_promise>().create(typ
 const actionCreator = createAction(type_as_string, (payload: payload_type) => { payload })
 const action = createAction(type_as_string, (payload: payload_type) => { payload })({} as payload_type) // "as payload_type" just to show intention
 ```
+
+## Promise action await
+
+Await a promise action after it has been dispatched towards the redux store.
+
+> :warning: Keep in mind that the action is not awaitable after its creation but as soon it surpassed the middleware!
+
+```typescript
+// Internally all members of the promiseAction (without
+// promise capabilities) gets assigned to the promise.
+const promise = store.dispatch(promiseAction());
+const resolvedValue = await promise;
+```
+
+Feel free to use `then`, `catch` or `finally` on `promise`.
 
 ## Promise action fulfillment or rejection
 
@@ -290,14 +312,12 @@ Additionally, all the helper functions will throw a custom `Error` subclass `Con
 ```typescript
 const promiseAction = promiseActionFactory<number>().create("MY_ACTION");
 
-declare const type_of_promise_that_resides_in_promise_action: typeof promiseAction.types.promise;
-const promise = store.dispatch(promiseAction()).meta.promise; // or
-const promise = store.dispatch(promiseAction()) as any as typeof promiseAction.types.promise;
-
-declare const type_of_trigger_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.triggerAction;
-declare const type_of_resolved_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.resolvedAction;
-declare const type_of_rejected_action_that_got_created_from_the_simple_or_advanced_action_creator: typeof promiseAction.types.rejectedAction;
+declare const type_of_promise_returned_when_surpassing_promise_middleware: typeof promiseAction.types.promise;
 declare const type_of_resolved_value_from_promise_of_promise_action: typeof promiseAction.types.resolveValue;
+
+declare const type_of_trigger_action_that_got_created_from_the_action_creator: typeof promiseAction.types.triggerAction;
+declare const type_of_resolved_action_that_got_created_from_the_action_creator: typeof promiseAction.types.resolvedAction;
+declare const type_of_rejected_action_that_got_created_from_the_action_creator: typeof promiseAction.types.rejectedAction;
 ```
 
 ### Sagas

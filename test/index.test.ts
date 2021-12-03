@@ -133,7 +133,7 @@ describe("implementPromiseAction", function () {
     const resolveValue = "resolveValue";
 
     // Dispatch the promise action
-    const { promise } = store.dispatch(promiseAction(triggerPayload)).meta;
+    const promise = store.dispatch(promiseAction(triggerPayload));
     expect(promise instanceof Promise).toBeTruthy();
 
     // Verify trigger payload has been reduced
@@ -159,7 +159,7 @@ describe("implementPromiseAction", function () {
     const rejectMessage = "rejectMessage";
 
     // Dispatch the promise action
-    const { promise } = store.dispatch(promiseAction(triggerPayload)).meta;
+    const promise = store.dispatch(promiseAction(triggerPayload));
 
     // Verify trigger payload has been reduced
     expect(store.getState().trigger === triggerPayload).toBeTruthy();
@@ -207,7 +207,7 @@ describe("resolvePromiseAction", function () {
     const resolveValue = "resolveValue";
 
     // Dispatch the promise action, monitor resolution
-    const { promise } = store.dispatch(promiseAction(triggerPayload)).meta;
+    const promise = store.dispatch(promiseAction(triggerPayload));
 
     // Verify trigger payload has been reduced
     expect(store.getState().trigger === triggerPayload).toBeTruthy();
@@ -255,7 +255,7 @@ describe("rejectPromiseAction", function () {
     const rejectMessage = "rejectMessage";
 
     // Dispatch the promise action, monitor rejection
-    const { promise } = store.dispatch(promiseAction(triggerPayload)).meta;
+    const promise = store.dispatch(promiseAction(triggerPayload));
 
     // Verify trigger payload has been reduced
     expect(store.getState().trigger === triggerPayload).toBeTruthy();
