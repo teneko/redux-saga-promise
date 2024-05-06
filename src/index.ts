@@ -80,7 +80,7 @@ export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadA
 export type SagaPromisePreparedActionCreator<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
 
 function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
-  return action?.meta?.promiseActions.resolved != null;
+  return action?.meta?.promiseActions?.resolved != null;
 }
 
 function isActionSagaPromise(action: SagaPromiseAction<any, any, any>, method): action is SagaPromiseActionWithPromiseResolution<any, any, any> {
