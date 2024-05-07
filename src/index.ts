@@ -2,7 +2,7 @@ import { Dispatch, Middleware, MiddlewareAPI } from "redux";
 import {
   ActionCreatorWithPreparedPayload, createAction, PayloadAction, PayloadActionCreator, PrepareAction,
 } from "@reduxjs/toolkit";
-import { isFunction, merge } from "lodash";
+import { merge } from "lodash";
 import { call, CallEffect, SagaReturnType } from "redux-saga/effects";
 import { ActionCreatorWithPayload, _ActionCreatorWithPreparedPayload } from "@reduxjs/toolkit/dist/createAction";
 import { ArgumentError } from "./ArgumentError";
@@ -15,19 +15,17 @@ type MetaOnlyPromiseActions<V, T extends string> = {
   },
 };
 
-type MetaOnlyPromiseResolution<V> = {
-  promiseResolution: {
-    resolve: (value: V) => void;
-    reject: (error: any) => void;
-  }
+type PromiseResolution<V> = {
+  resolve: (value: V) => void;
+  reject: (error: any) => void;
 };
 
+type PromiseResolutionMap<V> = Map<string, PromiseResolution<V>>;
+
 type SagaPromiseMeta<V, T extends string> = MetaOnlyPromiseActions<V, T>;
-type SagaPromiseMetaWithPromiseResolution<V, T extends string> = SagaPromiseMeta<V, T> & MetaOnlyPromiseResolution<V>;
 
 type SagaPromiseActionBase<V, P, T extends string, M extends SagaPromiseMeta<V, T>> = PayloadAction<P, T, M, never>;
 type SagaPromiseAction<V, P, T extends string> = SagaPromiseActionBase<V, P, T, SagaPromiseMeta<V, T>>;
-type SagaPromiseActionWithPromiseResolution<V, P, T extends string> = SagaPromiseActionBase<V, P, T, SagaPromiseMetaWithPromiseResolution<V, T>>;
 
 type MetaFromActionCreator<V, T extends string, M extends SagaPromiseMeta<V, T>, PA extends PrepareAction<any>> = ReturnType<PA> extends {
   meta: infer _M;
@@ -79,13 +77,19 @@ export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadA
 
 export type SagaPromisePreparedActionCreator<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
 
+let promiseResolutionMap: PromiseResolutionMap<any> | undefined;
+
+function getPromiseResolution<V>(action: SagaPromiseAction<any, any, any>): PromiseResolution<V> | undefined {
+  return promiseResolutionMap?.get(action.type);
+}
+
 function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
   return action?.meta?.promiseActions?.resolved != null;
 }
 
-function isActionSagaPromise(action: SagaPromiseAction<any, any, any>, method): action is SagaPromiseActionWithPromiseResolution<any, any, any> {
+function isActionSagaPromise(action: SagaPromiseAction<any, any, any>, method): action is SagaPromiseAction<any, any, any> {
   if (!isTriggerAction(action)) throw new ArgumentError(`redux-saga-promise: ${method}: first argument must be promise trigger action, got ${action}`);
-  if (!isFunction((action as SagaPromiseActionWithPromiseResolution<any, any, any>)?.meta?.promiseResolution?.resolve)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute--it seems that promiseMiddleware has not been not included before SagaMiddleware`);
+  if (!promiseResolutionMap?.has(action.type)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute--it seems that promiseMiddleware has not been not included before SagaMiddleware`);
   return true;
 }
 
@@ -93,12 +97,12 @@ type ResolveValueFromTriggerAction<TAction> = TAction extends {
   meta: MetaOnlyPromiseActions<infer V, any>;
 } ? V : never;
 
-function resolvePromise(action: SagaPromiseActionWithPromiseResolution<any, any, any>, value: any) {
-  return action.meta.promiseResolution.resolve(value);
+function resolvePromise(action: SagaPromiseAction<any, any, any>, value: any) {
+  return getPromiseResolution(action).resolve(value);
 }
 
-function rejectPromise(action: SagaPromiseActionWithPromiseResolution<any, any, any>, error: any) {
-  return action.meta.promiseResolution.reject(error);
+function rejectPromise(action: SagaPromiseAction<any, any, any>, error: any) {
+  return getPromiseResolution(action).reject(error);
 }
 
 /**
@@ -254,11 +258,13 @@ export function promiseActionFactory<V = unknown>() {
 *
 * Non-actionPromiseFactory actions won't get processed in any kind.
 */
-export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => (next: Dispatch) => (action) => {
-  if (isTriggerAction(action)) {
-    const promise = new Promise((resolve, reject) => next(merge(action, {
-      meta: <MetaOnlyPromiseResolution<any>>{
-        promiseResolution: {
+export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => {
+  promiseResolutionMap = new Map();
+
+  return (next: Dispatch) => (action) => {
+    if (isTriggerAction(action)) {
+      const promise = new Promise((resolve, reject) => {
+        promiseResolutionMap.set(action.type, {
           resolve: (value) => {
             resolve(value);
             store.dispatch(action.meta.promiseActions.resolved(value));
@@ -267,14 +273,16 @@ export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => (next: Di
             reject(error);
             store.dispatch(action.meta.promiseActions.rejected(error));
           },
-        },
-      },
-    })));
+        });
 
-    return merge(promise, action);
-  }
+        next(action);
+      });
 
-  return next(action);
+      return merge(promise, action);
+    }
+
+    return next(action);
+  };
 };
 
 export * from "./ArgumentError";
