@@ -8,10 +8,10 @@ import { ActionCreatorWithPayload, _ActionCreatorWithPreparedPayload } from "@re
 import { ArgumentError } from "./ArgumentError";
 import { ConfigurationError } from "./ConfigurationError";
 
-const promiseActionSymbol = Symbol("redux-saga-promise-action");
+export const promiseActionSymbol = Symbol("redux-saga-promise-action");
 
 type MetaOnlyPromiseActions<V, T extends string> = {
-  actionSymbol: typeof promiseActionSymbol;
+  [promiseActionSymbol]: boolean;
   promiseActions: {
     resolved: ActionCreatorWithPayload<V, T>;
     rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
@@ -87,7 +87,7 @@ function getPromiseResolution<V>(action: SagaPromiseAction<any, any, any>): Prom
 }
 
 function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
-  return action?.meta?.actionSymbol === promiseActionSymbol;
+  return action?.meta?.[promiseActionSymbol] ?? false;
 }
 
 function isActionSagaPromise(action: SagaPromiseAction<any, any, any>, method): action is SagaPromiseAction<any, any, any> {
@@ -164,7 +164,7 @@ function wrapTriggerAction<V, P, T extends string, TA extends PayloadActionCreat
 
   const updatedTrigger = <TriggerActionCreator<V, P, T, SagaPromiseMeta<V, T>, TA>>createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
     meta: <SagaPromiseMeta<V, T>>{
-      actionSymbol: promiseActionSymbol,
+      [promiseActionSymbol]: true,
       promiseActions: {
         resolved: resolvedAction,
         rejected: rejectedAction,
