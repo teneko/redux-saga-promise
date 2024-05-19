@@ -13,6 +13,7 @@ import {
   promiseMiddleware,
   rejectPromiseAction,
   resolvePromiseAction,
+  isPromiseAction,
 } from "../src/index";
 
 describe("promiseAction", function () {
@@ -39,6 +40,17 @@ describe("promiseAction", function () {
     it(`${action.type} should have keys`, function () {
       expect(action?.meta?.promiseActions?.resolved).toBeTruthy();
       expect(action?.meta?.promiseActions?.rejected).toBeTruthy();
+    });
+  });
+});
+
+describe("isPromiseAction", () => {
+  describe.each([
+    promiseActionFactory<string>().create("simple")(),
+    promiseActionFactory<string>().create("prepared", () => ({ payload: { test: "" } }))(),
+  ])("action", function (action) {
+    it("should be a promise action", function () {
+      expect(isPromiseAction(action)).toBeTruthy();
     });
   });
 });

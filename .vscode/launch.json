@@ -10,7 +10,7 @@
       "runtimeArgs": ["run-script", "test"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
-      "type": "pwa-node",
+      "type": "node",
       "console": "integratedTerminal"
     }
   ]

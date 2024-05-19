@@ -2,34 +2,27 @@ import { Dispatch, Middleware, MiddlewareAPI } from "redux";
 import {
   ActionCreatorWithPreparedPayload, createAction, PayloadAction, PayloadActionCreator, PrepareAction,
 } from "@reduxjs/toolkit";
-import { isFunction, merge } from "lodash";
+import { merge } from "lodash";
 import { call, CallEffect, SagaReturnType } from "redux-saga/effects";
-import { ActionCreatorWithPayload, _ActionCreatorWithPreparedPayload } from "@reduxjs/toolkit/dist/createAction";
+import { ActionCreatorWithPayload, isAction, isActionCreator } from "@reduxjs/toolkit/dist";
+import { _ActionCreatorWithPreparedPayload } from "@reduxjs/toolkit/dist/createAction";
 import { ArgumentError } from "./ArgumentError";
 import { ConfigurationError } from "./ConfigurationError";
 
-type MetaOnlyPromiseActions<V, T extends string> = {
-  promiseActions: {
-    resolved: ActionCreatorWithPayload<V, T>;
-    rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
-  },
-};
+const promiseActionSymbol = Symbol("@teneko/redux-saga-promise");
 
-type MetaOnlyPromiseResolution<V> = {
-  promiseResolution: {
-    resolve: (value: V) => void;
-    reject: (error: any) => void;
+type PromiseActionsHolder<V, T extends string> = {
+  promiseActions: {
+    resolved: ActionCreatorWithPayload<V, `${T}/resolved`>;
+    rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
   }
 };
 
-type SagaPromiseMeta<V, T extends string> = MetaOnlyPromiseActions<V, T>;
-type SagaPromiseMetaWithPromiseResolution<V, T extends string> = SagaPromiseMeta<V, T> & MetaOnlyPromiseResolution<V>;
+type ActionMeta<V, T extends string> = PromiseActionsHolder<V, T>;
+type AbstractAction<V, P, T extends string, M extends ActionMeta<V, T>> = PayloadAction<P, T, M, never>;
+export type SagaPromiseAction<V, P, T extends string> = AbstractAction<V, P, T, ActionMeta<V, T>>;
 
-type SagaPromiseActionBase<V, P, T extends string, M extends SagaPromiseMeta<V, T>> = PayloadAction<P, T, M, never>;
-type SagaPromiseAction<V, P, T extends string> = SagaPromiseActionBase<V, P, T, SagaPromiseMeta<V, T>>;
-type SagaPromiseActionWithPromiseResolution<V, P, T extends string> = SagaPromiseActionBase<V, P, T, SagaPromiseMetaWithPromiseResolution<V, T>>;
-
-type MetaFromActionCreator<V, T extends string, M extends SagaPromiseMeta<V, T>, PA extends PrepareAction<any>> = ReturnType<PA> extends {
+type MetaFromActionCreator<V, T extends string, M extends ActionMeta<V, T>, PA extends PrepareAction<any>> = ReturnType<PA> extends {
   meta: infer _M;
 } ? _M : M;
 
@@ -39,21 +32,21 @@ type Sagas<V, P, T extends string> = {
   reject: (action: SagaPromiseAction<V, P, T>, error: any) => ReturnType<typeof rejectPromiseAction>
 };
 
-type ActionOnlySagas<V, P, T extends string> = {
+type SagasHolder<V, P, T extends string> = {
   sagas: Sagas<V, P, T>
 };
 
-type TypesFromAction<V, P, T extends string, M extends SagaPromiseMeta<V, T>> = {
+type ActionTypesHolder<V, P, T extends string, M extends ActionMeta<V, T>> = {
   types: {
-    triggerAction: SagaPromiseActionBase<V, P, T, M>,
-    resolvedAction: PayloadAction<V, T>,
+    triggerAction: AbstractAction<V, P, T, M>,
+    resolvedAction: PayloadAction<V, `${T}/resolved`>,
     rejectedAction: PayloadAction<any, `${T}/rejected`>
     promise: Promise<V>,
     resolveValue: V
   }
 };
 
-interface TriggerActionCreator<V, P, T extends string, M extends SagaPromiseMeta<V, T>, PA extends PrepareAction<any>> extends ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, MetaFromActionCreator<V, T, M, PA>> {
+interface TriggerActionCreator<V, P, T extends string, M extends ActionMeta<V, T>, PA extends PrepareAction<any>> extends ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, MetaFromActionCreator<V, T, M, PA>> {
   /**
    * Calling this {@link redux#ActionCreator} with `Args` will return
    * an Action with a payload of type `P` and (depending on the `PrepareAction`
@@ -62,7 +55,7 @@ interface TriggerActionCreator<V, P, T extends string, M extends SagaPromiseMeta
   (...args: Parameters<PA>): PayloadAction<P, T, M, never>;
 }
 
-interface PromiseTriggerActionCreator<V, P, T extends string, M extends SagaPromiseMeta<V, T>, PA extends PrepareAction<any>> extends ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, MetaFromActionCreator<V, T, M, PA>> {
+interface PromiseTriggerActionCreator<V, P, T extends string, M extends ActionMeta<V, T>, PA extends PrepareAction<any>> extends ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, MetaFromActionCreator<V, T, M, PA>> {
   /**
    * Calling this {@link redux#ActionCreator} with `Args` will return
    * an Action with a payload of type `P` and (depending on the `PrepareAction`
@@ -71,33 +64,55 @@ interface PromiseTriggerActionCreator<V, P, T extends string, M extends SagaProm
   (...args: Parameters<PA>): PayloadAction<P, T, M, never> & Promise<V>;
 }
 
-export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadActionCreator<any, T>> = PromiseTriggerActionCreator<V, P, T, SagaPromiseMeta<V, T>, TA> & {
+export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadActionCreator<any, T>> = PromiseTriggerActionCreator<V, P, T, ActionMeta<V, T>, TA> & {
   trigger: SagaPromiseActionCreator<V, P, T, TA>
-  resolved: ActionCreatorWithPayload<V, T>;
+  resolved: ActionCreatorWithPayload<V, `${T}/resolved`>;
   rejected: ActionCreatorWithPayload<any, `${T}/rejected`>;
-} & ActionOnlySagas<V, P, T> & TypesFromAction<V, P, T, SagaPromiseMeta<V, T>>;
+} & SagasHolder<V, P, T> & ActionTypesHolder<V, P, T, ActionMeta<V, T>>;
 
-export type SagaPromisePreparedActionCreator<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
+export type SagaPromiseActionCreatorWithPreparedPayload<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
+/**
+ * @deprecated Use {@link SagaPromiseActionCreatorWithPreparedPayload} instead.
+ */
+export type SagaPromisePreparedActionCreator<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreatorWithPreparedPayload<V, T, TA>;
 
-function isTriggerAction(action: SagaPromiseAction<any, any, any>) {
-  return action?.meta?.promiseActions.resolved != null;
+export function isPromiseAction(action: unknown): action is SagaPromiseAction<any, any, any> {
+  const typedAction = action as SagaPromiseAction<any, any, any>;
+  return isAction(typedAction)
+    && typeof typedAction.meta?.promiseActions === "object"
+    && isActionCreator(typedAction.meta.promiseActions.resolved)
+    && isActionCreator(typedAction.meta.promiseActions.rejected);
 }
 
-function isActionSagaPromise(action: SagaPromiseAction<any, any, any>, method): action is SagaPromiseActionWithPromiseResolution<any, any, any> {
-  if (!isTriggerAction(action)) throw new ArgumentError(`redux-saga-promise: ${method}: first argument must be promise trigger action, got ${action}`);
-  if (!isFunction((action as SagaPromiseActionWithPromiseResolution<any, any, any>)?.meta?.promiseResolution?.resolve)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute--it seems that promiseMiddleware has not been not included before SagaMiddleware`);
+type PromiseResolution<V> = {
+  [promiseActionSymbol]: true;
+  resolve: (value: V) => void;
+  reject: (error: any) => void;
+};
+type PromisifiedActionMeta<V, T extends string> = ActionMeta<V, T> & { promiseResolution: PromiseResolution<V> };
+type PromisifiedAction<V, P, T extends string> = AbstractAction<V, P, T, PromisifiedActionMeta<V, T>>;
+
+function isPromisifiedAction(action: unknown, checkOnlyPromisification = false): action is PromisifiedAction<any, any, any> {
+  const typedAction = action as PromisifiedAction<any, any, any>;
+  return (checkOnlyPromisification || isPromiseAction(typedAction))
+    && typedAction.meta?.promiseResolution?.[promiseActionSymbol] === true;
+}
+
+function ensurePromisifiedAction(action: SagaPromiseAction<any, any, any>, method): action is PromisifiedAction<any, any, any> {
+  if (!isPromiseAction(action)) throw new ArgumentError(`redux-saga-promise: ${method}: first argument must be promise trigger action, got ${action}`);
+  if (!isPromisifiedAction(action, true)) throw new ConfigurationError(`redux-saga-promise: ${method}: Unable to execute--it seems that promiseMiddleware has not been not included before SagaMiddleware`);
   return true;
 }
 
 type ResolveValueFromTriggerAction<TAction> = TAction extends {
-  meta: MetaOnlyPromiseActions<infer V, any>;
+  meta: PromiseActionsHolder<infer V, any>;
 } ? V : never;
 
-function resolvePromise(action: SagaPromiseActionWithPromiseResolution<any, any, any>, value: any) {
+function resolvePromise(action: PromisifiedAction<any, any, any>, value: any) {
   return action.meta.promiseResolution.resolve(value);
 }
 
-function rejectPromise(action: SagaPromiseActionWithPromiseResolution<any, any, any>, error: any) {
+function rejectPromise(action: PromisifiedAction<any, any, any>, error: any) {
   return action.meta.promiseResolution.reject(error);
 }
 
@@ -107,7 +122,7 @@ function rejectPromise(action: SagaPromiseActionWithPromiseResolution<any, any, 
  * @param executor A function that returns a value or throws a error that get applied to promise.
  */
 export function* implementPromiseAction<TAction extends SagaPromiseAction<any, any, any>>(action: TAction, executor: TriggerExecutor<ResolveValueFromTriggerAction<TAction>>) {
-  if (!isActionSagaPromise(action, "implementPromiseAction")) {
+  if (!ensurePromisifiedAction(action, "implementPromiseAction")) {
     return; // Never hit, exception is thrown before
   }
 
@@ -122,7 +137,7 @@ export function* implementPromiseAction<TAction extends SagaPromiseAction<any, a
  * Saga to resolve a promise.
  */
 export function* resolvePromiseAction<TAction extends SagaPromiseAction<any, any, any>>(action: TAction, value: ResolveValueFromTriggerAction<TAction>) {
-  if (!isActionSagaPromise(action, "resolvePromiseAction")) {
+  if (!ensurePromisifiedAction(action, "resolvePromiseAction")) {
     return; // Never hit, exception is thrown before
   }
 
@@ -133,7 +148,7 @@ export function* resolvePromiseAction<TAction extends SagaPromiseAction<any, any
  * Saga to reject a promise.
  */
 export function* rejectPromiseAction<TAction extends SagaPromiseAction<any, any, any>>(action: TAction, error: any) {
-  if (!isActionSagaPromise(action, "rejectPromiseAction")) {
+  if (!ensurePromisifiedAction(action, "rejectPromiseAction")) {
     return; // Never hit, exception is thrown before
   }
 
@@ -155,8 +170,8 @@ function wrapTriggerAction<V, P, T extends string, TA extends PayloadActionCreat
 ): SagaPromiseActionCreator<V, P, T, TA> {
   const { resolvedAction, rejectedAction } = createPromiseActions<V, T>(type);
 
-  const updatedTrigger = <TriggerActionCreator<V, P, T, SagaPromiseMeta<V, T>, TA>>createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
-    meta: <SagaPromiseMeta<V, T>>{
+  const updatedTrigger = <TriggerActionCreator<V, P, T, ActionMeta<V, T>, TA>>createAction(type, (...args: any[]) => merge(triggerAction.apply(null, args), {
+    meta: <ActionMeta<V, T>>{
       promiseActions: {
         resolved: resolvedAction,
         rejected: rejectedAction,
@@ -187,7 +202,7 @@ function createPromiseAction<V = any, P = void, T extends string = string>(type:
   );
 }
 
-function createPreparedPromiseAction<V, PA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: PA) {
+function createPromiseActionWithPreparedPayload<V, PA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: PA) {
   const triggerAction = createAction<PA, T>(type, prepareAction);
 
   return wrapTriggerAction<V, ReturnType<PA>["payload"], T, typeof triggerAction>(
@@ -220,7 +235,7 @@ interface PromiseActionFactory<V> {
    * @param prepare (optional) a method that takes any number of arguments and returns { payload } or { payload, meta }.
    *                If this is given, the resulting action creator will pass its arguments to this method to calculate payload & meta.
    */
-  create<TA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: TA): SagaPromisePreparedActionCreator<V, T, TA>
+  create<TA extends PrepareAction<any> = PrepareAction<any>, T extends string = string>(type: T, prepareAction: TA): SagaPromiseActionCreatorWithPreparedPayload<V, T, TA>
 }
 
 /**
@@ -238,7 +253,7 @@ export function promiseActionFactory<V = unknown>() {
       }
 
       if (arguments.length === 2) {
-        return createPreparedPromiseAction(type, prepareAction);
+        return createPromiseActionWithPreparedPayload(type, prepareAction);
       }
 
       return createPromiseAction(type);
@@ -255,21 +270,34 @@ export function promiseActionFactory<V = unknown>() {
 * Non-actionPromiseFactory actions won't get processed in any kind.
 */
 export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => (next: Dispatch) => (action) => {
-  if (isTriggerAction(action)) {
-    const promise = new Promise((resolve, reject) => next(merge(action, {
-      meta: <MetaOnlyPromiseResolution<any>>{
-        promiseResolution: {
-          resolve: (value) => {
-            resolve(value);
-            store.dispatch(action.meta.promiseActions.resolved(value));
-          },
-          reject: (error) => {
-            reject(error);
-            store.dispatch(action.meta.promiseActions.rejected(error));
-          },
+  if (isPromiseAction(action)) {
+    const promise = new Promise((resolve, reject) => {
+      const promiseResolution: PromiseResolution<any> = {
+        [promiseActionSymbol]: true,
+        resolve: (value) => {
+          resolve(value);
+          store.dispatch(action.meta.promiseActions.resolved(value));
         },
-      },
-    })));
+        reject: (error) => {
+          reject(error);
+          store.dispatch(action.meta.promiseActions.rejected(error));
+        },
+      };
+
+      const typedAction = action as PromisifiedAction<any, any, any>;
+
+      const promisifiedAction: PromisifiedAction<any, any, any> = {
+        ...action,
+        meta: {
+          ...action.meta,
+          promiseResolution: typeof typedAction.meta.promiseResolution === "object"
+            ? { ...typedAction.meta.promiseResolution, ...promiseResolution }
+            : promiseResolution,
+        },
+      };
+
+      next(promisifiedAction);
+    });
 
     return merge(promise, action);
   }
