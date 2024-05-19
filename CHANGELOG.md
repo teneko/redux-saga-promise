@@ -1,8 +1,6 @@
 ## <small>3.0.1 (2024-05-19)</small>
 
-* test ([f26f2d2](https://github.com/teroneko/redux-saga-promise/commit/f26f2d2))
-* test ([6149d8c](https://github.com/teroneko/redux-saga-promise/commit/6149d8c))
-* chore: added changelog config ([50618f2](https://github.com/teroneko/redux-saga-promise/commit/50618f2))
+* chore: release 3.0.1 ([74dd38a](https://github.com/teroneko/redux-saga-promise/commit/74dd38a))
 * refactor: ensure integrity of middleware-surpassed promise-action by introducing check of the presen ([b96e407](https://github.com/teroneko/redux-saga-promise/commit/b96e407))
 * build: updated dependencies ([b657ffa](https://github.com/teroneko/redux-saga-promise/commit/b657ffa))
 
