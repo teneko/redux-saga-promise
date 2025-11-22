@@ -1,3 +1,12 @@
+# [4.0.0](https://github.com/teneko/redux-saga-promise/compare/3.0.1...4.0.0) (2025-11-22)
+
+
+### Features
+
+* adapt to breaking changes of redux 5.0.1 ([80a4813](https://github.com/teneko/redux-saga-promise/commit/80a4813fa39249303d2297a076dc60104b155723))
+
+
+
 ## <small>3.0.1 (2024-05-19)</small>
 
 * chore: release 3.0.1 ([74dd38a](https://github.com/teroneko/redux-saga-promise/commit/74dd38a))
