@@ -17,6 +17,7 @@
     "@typescript-eslint"
   ],
   "rules": {
+    "linebreak-style": "warn",
     "quotes": [
       2,
       "double"

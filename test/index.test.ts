@@ -1,7 +1,7 @@
 /* eslint-disable func-names */
 /* eslint-disable prefer-arrow-callback */
 import {
-  applyMiddleware, createAction, createReducer, createStore,
+  configureStore, createAction, createReducer
 } from "@reduxjs/toolkit";
 import createSagaMiddleware from "redux-saga";
 import { call, take, takeEvery } from "redux-saga/effects";
@@ -128,7 +128,18 @@ function setup(saga, { withMiddleware = true } = {}) {
   const caughtMiddlewareError = () => caughtError;
   const sagaMiddleware = createSagaMiddleware({ onError: (error) => { caughtError = error; } });
   const middlewares = withMiddleware ? [promiseMiddleware, sagaMiddleware] : [sagaMiddleware];
-  const store = createStore(reducer, initialState, applyMiddleware(...middlewares));
+
+  const store = configureStore({
+    reducer,
+    preloadedState: initialState,
+    middleware: (getDefaultMiddleware) => {
+      const base = getDefaultMiddleware({ serializableCheck: false });
+
+      return withMiddleware
+        ? base.concat(promiseMiddleware, sagaMiddleware)
+        : base.concat(sagaMiddleware);
+    },
+  });
 
   //
   // Run the passed saga

@@ -1,15 +1,27 @@
-import { Dispatch, Middleware, MiddlewareAPI } from "redux";
+import { Dispatch, isAction, Middleware, MiddlewareAPI, UnknownAction } from "redux";
 import {
-  ActionCreatorWithPreparedPayload, createAction, PayloadAction, PayloadActionCreator, PrepareAction,
+  ActionCreatorWithPayload,
+  ActionCreatorWithPreparedPayload, createAction, isActionCreator, PayloadAction, PayloadActionCreator, PrepareAction,
 } from "@reduxjs/toolkit";
 import { merge } from "lodash";
 import { call, CallEffect, SagaReturnType } from "redux-saga/effects";
-import { ActionCreatorWithPayload, isAction, isActionCreator } from "@reduxjs/toolkit/dist";
-import { _ActionCreatorWithPreparedPayload } from "@reduxjs/toolkit/dist/createAction";
 import { ArgumentError } from "./ArgumentError";
 import { ConfigurationError } from "./ConfigurationError";
 
 const promiseActionSymbol = Symbol("@teneko/redux-saga-promise");
+
+/**
+ * Copyright (c) 2018 Mark Erikson
+
+ * Internal version of `ActionCreatorWithPreparedPayload`. Not to be used externally.
+ *
+ * @internal
+ */
+type _ActionCreatorWithPreparedPayload<PA extends PrepareAction<any> | void, T extends string = string> = PA extends PrepareAction<infer P> ? ActionCreatorWithPreparedPayload<Parameters<PA>, P, T, ReturnType<PA> extends {
+  error: infer E;
+} ? E : never, ReturnType<PA> extends {
+  meta: infer M;
+} ? M : never> : void;
 
 type PromiseActionsHolder<V, T extends string> = {
   promiseActions: {
@@ -61,7 +73,7 @@ interface PromiseTriggerActionCreator<V, P, T extends string, M extends ActionMe
    * an Action with a payload of type `P` and (depending on the `PrepareAction`
    * method used) a `meta`- and `error` property of types `M` and `E` respectively.
    */
-  (...args: Parameters<PA>): PayloadAction<P, T, M, never> & Promise<V>;
+  (...args: Parameters<PA>): PayloadAction<P, T, M, never> & Promise<V> & UnknownAction;
 }
 
 export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadActionCreator<any, T>> = PromiseTriggerActionCreator<V, P, T, ActionMeta<V, T>, TA> & {
@@ -71,6 +83,7 @@ export type SagaPromiseActionCreator<V, P, T extends string, TA extends PayloadA
 } & SagasHolder<V, P, T> & ActionTypesHolder<V, P, T, ActionMeta<V, T>>;
 
 export type SagaPromiseActionCreatorWithPreparedPayload<V, T extends string, TA extends PrepareAction<any>> = SagaPromiseActionCreator<V, ReturnType<TA>["payload"], T, _ActionCreatorWithPreparedPayload<TA, T>>;
+
 /**
  * @deprecated Use {@link SagaPromiseActionCreatorWithPreparedPayload} instead.
  */
@@ -269,7 +282,7 @@ export function promiseActionFactory<V = unknown>() {
 *
 * Non-actionPromiseFactory actions won't get processed in any kind.
 */
-export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => (next: Dispatch) => (action) => {
+export const promiseMiddleware: Middleware = (store: MiddlewareAPI) => (next: Dispatch) => (action: UnknownAction) => {
   if (isPromiseAction(action)) {
     const promise = new Promise((resolve, reject) => {
       const promiseResolution: PromiseResolution<any> = {
